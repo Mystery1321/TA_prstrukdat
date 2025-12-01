@@ -146,6 +146,7 @@ with col2:
         st.markdown("### Synopsis")
         st.markdown(f"<div class='overview'>{overview}</div>", unsafe_allow_html=True)
 
+        
     with tab2:
         cast_list = get_movie_cast(movie_id)
 
@@ -190,6 +191,50 @@ with col2:
 
             st.markdown(cast_html, unsafe_allow_html=True)
 
+# ====================== STATISTICS ======================
+st.markdown("### 📊 Statistics")
+colA, colB = st.columns(2)
+with colA:
+    st.metric("Vote Count", movie.get("vote_count", "N/A"))
+with colB:
+    st.metric("Popularity", movie.get("popularity", "N/A"))
+
+# ====================== COMPARISON ======================
+st.markdown("### 🔍 Compare With Another Movie")
+compare_query = st.text_input("Search movie to compare")
+
+def search_movies(query):
+    response = requests.get(
+        "https://api.themoviedb.org/3/search/movie",
+        params={"query": query},
+        headers=headers
+    )
+    if response.status_code != 200:
+        return []
+    return response.json().get("results", [])
+
+if compare_query.strip():
+    results = search_movies(compare_query.strip())[:5]
+    for item in results:
+        if st.button(f"Pilih: {item['title']}"):
+            st.session_state["compare_movie"] = item["id"]
+            st.rerun()
+
+if "compare_movie" in st.session_state:
+    other_movie = get_movie_details(st.session_state["compare_movie"])
+
+    st.subheader(f"📈 Comparison Result: {title} VS {other_movie['title']}")
+    st.write(f"**{title}** — Vote: {movie.get('vote_count')} | Popularity: {movie.get('popularit')}")
+    st.write(f"**{other_movie['title']}** — Vote: {other_movie.get('vote_count')} | Popularity: {other_movie.get('popularity')}")
+
+    import pandas as pd
+    data = {
+        "Statistic": ["Vote Count", "Popularity"],
+        title: [movie.get("vote_count"), movie.get("popularity")],
+        other_movie["title"]: [other_movie.get("vote_count"), other_movie.get("popularity")]
+    }
+    st.dataframe(pd.DataFrame(data), use_container_width=True)
+       
 
 #TRAILER
 st.markdown("<div class='section-title'>Trailer</div>", unsafe_allow_html=True)
